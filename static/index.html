@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  <title></title>
+  <script src='https://ajax.googleapis.com/ajax/libs/angularjs/1.3.5/angular.min.js'/></script>
+  <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.5/angular-route.min.js"></script>
+  <script>
+    var myApp = angular.module('myApp', ['ngRoute']);
+    myApp.config(function ($routeProvider){
+      $routeProvider
+      .when('/',{
+        templateUrl: 'partials/players.html'
+      })
+      .when('/partial2',{
+        templateUrl: 'partials/teams.html'
+      })
+      .when('/partial3',{
+        templateUrl: 'partials/associations.html'
+      })
+      .otherwise({
+        redirectTo: '/'
+      });
+    });
+
+    myApp.factory('PlayerFactory', function(){
+      var players = [];
+      var factory = {};
+      factory.addPlayer = function(newPlayer,callback){
+        players.push(newPlayer);
+        callback(players);
+      }
+      factory.removePlayer = function(player,callback){
+        players.splice(players.indexOf(player), 1);
+        callback(players);
+      }
+      factory.getPlayers = function(callback){
+        callback(players);
+      }
+      factory.addAssociation = function(newAssoc){
+        for (x in players){
+          if(players[x] == newAssoc.player){
+            players[x].team = JSON.parse(newAssoc.team)
+          }
+        }
+      }
+      return factory;
+    })
+
+    myApp.factory('TeamFactory', function(){
+      var teams = []
+      var factory = {}
+      factory.addTeam = function(newTeam,callback){
+        newTeam.players = [];
+        teams.push(newTeam)
+        callback(teams)
+      }
+      factory.removeTeam = function(team,callback){
+        teams.splice(teams.indexOf(team),1);
+        callback(teams);
+      }
+      factory.getTeams = function(callback){
+        callback(teams);
+      }
+
+      factory.addAssociation = function(newAssoc){
+        for (x in teams){
+          console.log(teams[x].name)
+          console.log(newAssoc.team)
+          if(teams[x].name == JSON.parse(newAssoc.team).name){
+            teams[x].players.push(JSON.parse(newAssoc.player))
+          }
+        }
+      }
+      return factory
+    })
+
+    myApp.controller('PlayersController', function($scope,PlayerFactory){
+      PlayerFactory.getPlayers(function(players){
+        $scope.players = players;
+      })
+      $scope.addPlayer = function(){
+        PlayerFactory.addPlayer($scope.newPlayer, function(players){
+          $scope.players = players;
+          $scope.newPlayer = {};
+        })
+      };
+      $scope.removePlayer = function(player){
+        PlayerFactory.removePlayer(player, function(players){
+          $scope.players = players;
+        })
+      };
+    });
+
+    myApp.controller('TeamsController', function($scope,TeamFactory){
+      TeamFactory.getTeams(function(teams){
+        $scope.teams = teams;
+      })
+      $scope.addTeam = function(){
+        TeamFactory.addTeam($scope.newTeam, function(teams){
+          $scope.teams = teams;
+          $scope.newTeam = {};
+        })
+      };
+      $scope.removeTeam = function(team){
+        TeamFactory.removeTeam(team, function(teams){
+          $scope.teams = teams;
+        })
+      };
+    });
+
+    myApp.controller('AssociationsController', function($scope,TeamFactory,PlayerFactory){
+      PlayerFactory.getPlayers(function(players){
+        $scope.players = players;
+      })
+      TeamFactory.getTeams(function (teams) {
+        $scope.teams = teams;
+      })
+      $scope.addAssociation = function(newAssoc){
+        PlayerFactory.addAssociation($scope.newAssoc)
+        TeamFactory.addAssociation($scope.newAssoc)
+      }
+    })
+
+  </script>
+</head>
+<body>
+  <div ng-app="myApp">
+    <a href="#/">Players</a> | <a href="#/partial2">Teams</a> | <a href="#/partial3">Associations</a>
+    <div ng-view=''></div>
+  </div>
+</body>
+</html>
